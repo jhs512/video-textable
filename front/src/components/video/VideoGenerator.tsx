@@ -8,8 +8,10 @@ import { parseScenes } from "@/lib/sceneParser";
 import { useVideoGenerate } from "@/hooks/useVideoGenerate";
 
 import ExportButton from "./ExportButton";
+import ExportVideoButton from "./ExportVideoButton";
 import PlaybackControls from "./PlaybackControls";
 import TextEditor from "./TextEditor";
+import TtsControls from "./TtsControls";
 import VideoPreview from "./VideoPreview";
 
 export default function VideoGenerator() {
@@ -21,15 +23,20 @@ export default function VideoGenerator() {
   const {
     currentIndex,
     status,
+    ttsConfig,
+    setTtsConfig,
     play,
     pause,
     resume,
     stop,
     goToPrev,
     goToNext,
+    seekTo,
   } = useVideoGenerate(scenes);
 
-  const handleExport = useCallback(() => {
+  const isActive = status.type === "playing" || status.type === "paused";
+
+  const handleExportImage = useCallback(() => {
     if (previewRef.current) {
       captureAndDownload(previewRef.current, `scene-${currentIndex + 1}.png`);
     }
@@ -46,6 +53,8 @@ export default function VideoGenerator() {
         />
         <PlaybackControls
           status={status}
+          currentIndex={currentIndex}
+          totalScenes={scenes.length}
           canGoPrev={currentIndex > 0}
           canGoNext={currentIndex < scenes.length - 1}
           onPlay={play}
@@ -55,9 +64,20 @@ export default function VideoGenerator() {
           onPrev={goToPrev}
           onNext={goToNext}
         />
-        <div className="flex justify-end">
+        <TtsControls
+          config={ttsConfig}
+          onChange={setTtsConfig}
+          disabled={isActive}
+        />
+        <div className="flex justify-end gap-2">
           <ExportButton
-            onExport={handleExport}
+            onExport={handleExportImage}
+            disabled={scenes.length === 0}
+          />
+          <ExportVideoButton
+            previewRef={previewRef}
+            scenesCount={scenes.length}
+            onSeekToScene={seekTo}
             disabled={scenes.length === 0}
           />
         </div>

@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 
-import { PlaybackStatus, Scene } from "@/types/video";
+import { PlaybackStatus, Scene, TtsConfig } from "@/types/video";
 
 import { DEFAULT_TTS_CONFIG } from "@/constants/video";
 
@@ -11,6 +11,7 @@ import { cancelSpeech, pauseSpeech, resumeSpeech, speak } from "@/lib/tts";
 export function useVideoGenerate(scenes: Scene[]) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [status, setStatus] = useState<PlaybackStatus>({ type: "idle" });
+  const [ttsConfig, setTtsConfig] = useState<TtsConfig>(DEFAULT_TTS_CONFIG);
   const cancelledRef = useRef(false);
 
   const play = useCallback(async () => {
@@ -26,7 +27,7 @@ export function useVideoGenerate(scenes: Scene[]) {
       setStatus({ type: "playing", sceneIndex: i });
 
       try {
-        await speak(scenes[i].plainText, DEFAULT_TTS_CONFIG);
+        await speak(scenes[i].plainText, ttsConfig);
       } catch {
         break;
       }
@@ -37,7 +38,7 @@ export function useVideoGenerate(scenes: Scene[]) {
     if (!cancelledRef.current) {
       setStatus({ type: "finished" });
     }
-  }, [scenes, currentIndex]);
+  }, [scenes, currentIndex, ttsConfig]);
 
   const pause = useCallback(() => {
     pauseSpeech();
@@ -63,14 +64,24 @@ export function useVideoGenerate(scenes: Scene[]) {
     setCurrentIndex((i) => Math.min(scenes.length - 1, i + 1));
   }, [scenes.length]);
 
+  const seekTo = useCallback(
+    (index: number) => {
+      setCurrentIndex(Math.max(0, Math.min(index, scenes.length - 1)));
+    },
+    [scenes.length]
+  );
+
   return {
     currentIndex,
     status,
+    ttsConfig,
+    setTtsConfig,
     play,
     pause,
     resume,
     stop,
     goToPrev,
     goToNext,
+    seekTo,
   };
 }
